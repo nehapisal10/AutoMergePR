@@ -1,29 +1,100 @@
-name: Auto approve and merge PRs by dependabot
-
+name: Auto Merge PR on Approval
+ 
 on:
-  pull_request
 
+  pull_request_review:
+
+    types: [submitted]
+
+  pull_request:
+
+    types: [synchronize, reopened]
+ 
 jobs:
-  automerge:
-    name: Auto merge after successful checks
+
+  auto-merge:
+
     runs-on: ubuntu-latest
+ 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
 
-      - name: Run linter
-        run: |
-          npm install
-          npm run lint
+      - name: Check out the repository
 
-      - name: Run tests
-        run: |
-          npm test
+        uses: actions/checkout@v3
+ 
+      - name: Get PR details
 
-      - name: Auto merge
-        if: success()
-        uses: pascalgn/automerge-action@135f0bdb927d9807b5446f7ca9ecc2c51de03c4a
+        id: pr
+
+        uses: actions/github-script@v6
+
+        with:
+
+          script: |
+
+            const { data: pr } = await github.rest.pulls.get({
+
+              owner: context.repo.owner,
+
+              repo: context.repo.repo,
+
+              pull_number: context.payload.pull_request.number
+
+            });
+
+            core.setOutput("requested_reviewers_count", pr.requested_reviewers.length);
+ 
+      - name: Check all reviews
+
+        id: check_reviews
+
+        uses: actions/github-script@v6
+
+        with:
+
+          script: |
+
+            const { data: reviews } = await github.rest.pulls.listReviews({
+
+              owner: context.repo.owner,
+
+              repo: context.repo.repo,
+
+              pull_number: context.payload.pull_request.number
+
+            });
+
+            const approvals = reviews.filter(review => review.state === 'APPROVED');
+
+            const unique_approvers = [...new Set(approvals.map(approval => approval.user.id))];
+
+            core.setOutput("all_approved", unique_approvers.length >= parseInt(core.getInput("requested_reviewers_count")));
+
         env:
+
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          MERGE_LABELS: dependencies
-          MERGE_METHOD: rebase
+ 
+      - name: Merge Pull Request
+
+        if: steps.check_reviews.outputs.all_approved == 'true'
+
+        uses: actions/github-script@v6
+
+        with:
+
+          script: |
+
+            await github.rest.pulls.merge({
+
+              owner: context.repo.owner,
+
+              repo: context.repo.repo,
+
+              pull_number: context.payload.pull_request.number
+
+            });
+
+        env:
+
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+ 
