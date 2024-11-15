@@ -109,7 +109,7 @@ jobs:
         with:
 
           github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
+          required-approvals: 1
           script: |
 
             const { data: pr } = await github.rest.pulls.get({
