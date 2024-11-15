@@ -1,23 +1,29 @@
-name: Auto approve and merge PRs 
+name: Auto approve and merge PRs by dependabot
 
-# Trigger the workflow on pull request
 on:
   pull_request
 
 jobs:
   automerge:
     name: Auto merge after successful checks
-    # By default, jobs run in parallel. To run the jobs sequentially, they keywords "needs" is needed.
-    # Auto merge action can be done only when the PR is approved, hence this automerge needs autoapprove as a prerequisite
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run linter
+        run: |
+          npm install
+          npm run lint
+
+      - name: Run tests
+        run: |
+          npm test
+
       - name: Auto merge
-        # Custom action for auto merging already available on marketplace
+        if: success()
         uses: pascalgn/automerge-action@135f0bdb927d9807b5446f7ca9ecc2c51de03c4a
-        # Perform the auto merge action only when the PR is raised by dependabot
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          # By default, whenever dependabot raises a PR, it automatically assigns a label named "dependencies"
-          # So, this action merges those PRs labelled "dependencies" only
           MERGE_LABELS: dependencies
           MERGE_METHOD: rebase
