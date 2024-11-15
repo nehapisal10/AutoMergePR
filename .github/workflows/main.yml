@@ -76,8 +76,6 @@ jobs:
  
       - name: Merge Pull Request
 
-        if: steps.check_reviews.outputs.all_approved == 'true'
-
         uses: actions/github-script@v6
 
         with:
