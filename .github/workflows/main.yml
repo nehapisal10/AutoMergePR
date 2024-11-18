@@ -19,26 +19,18 @@ jobs:
   automerge:
     runs-on: ubuntu-latest
     permissions:
-      contents: write      # Permissions to modify repository contents
-      pull-requests: write # Permissions to manage pull requests
+      contents: write
+      pull-requests: write
+      actions: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install GitHub CLI
-        run: sudo apt-get install gh
-        
-      - name: Debug GH_TOKEN
-        run: echo "GH_TOKEN is set"
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      # Ensure PR is mergeable, check for reviews, and merge if possible
       - name: Ensure PR is mergeable
         id: mergeable
         env:
-          GH_TOKEN: ${{ github.token }}  # Pass GitHub token to GH CLI
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}  # Use PAT here instead of the default GITHUB_TOKEN
         run: |
           pr_details=$(gh pr view ${{ github.event.pull_request.number }} --json mergeable --jq .)
           mergeable=$(echo "$pr_details" | jq -r .mergeable)
@@ -51,7 +43,7 @@ jobs:
       - name: Automerge PR
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN  }}  # Use GITHUB_TOKEN here
+          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}  # Use PAT here
           script: |
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
