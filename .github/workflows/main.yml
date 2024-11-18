@@ -57,7 +57,7 @@ jobs:
         id: approvals
         uses: actions/github-script@v6
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ github.token }}  # Pass the GitHub token here
           script: |
             const { data: reviews } = await github.rest.pulls.listReviews({
               owner: context.repo.owner,
@@ -78,7 +78,7 @@ jobs:
       - name: Automerge Script
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          github-token: ${{ github.token }}  # Pass the GitHub token here
           script: |
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
