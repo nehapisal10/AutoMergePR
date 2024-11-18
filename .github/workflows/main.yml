@@ -22,7 +22,6 @@ jobs:
       contents: read
       pull-requests: write
       actions: write  # Added actions: write to ensure proper permissions
-      merge: write
 
     steps:
       - name: Checkout
