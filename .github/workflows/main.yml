@@ -30,7 +30,7 @@ jobs:
       - name: Ensure PR is mergeable
         id: mergeable
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}  # Use PAT here instead of the default GITHUB_TOKEN
+          GH_TOKEN: ${{ github.token }}  # Use PAT here instead of the default GITHUB_TOKEN
         run: |
           pr_details=$(gh pr view ${{ github.event.pull_request.number }} --json mergeable --jq .)
           mergeable=$(echo "$pr_details" | jq -r .mergeable)
