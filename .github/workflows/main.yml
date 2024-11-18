@@ -25,6 +25,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install gh
         
       - name: Debug GH_TOKEN
         run: echo "GH_TOKEN is set"
