@@ -30,7 +30,7 @@ jobs:
       - name: Ensure PR is mergeable
         id: mergeable
         env:
-          GH_TOKEN: ${{ github.token }}  # Use PAT here instead of the default GITHUB_TOKEN
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}  # Use PAT here instead of the default GITHUB_TOKEN
         run: |
           pr_details=$(gh pr view ${{ github.event.pull_request.number }} --json mergeable --jq .)
           mergeable=$(echo "$pr_details" | jq -r .mergeable)
@@ -43,7 +43,7 @@ jobs:
       - name: Automerge PR
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}  # Use PAT here
+          github-token: ${{ github.token }}  # Use PAT here
           script: |
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
