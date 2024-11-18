@@ -25,6 +25,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        
+      - name: Debug GH_TOKEN
+        run: echo "GH_TOKEN is set"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       # Ensure PR is mergeable, check for reviews, and merge if possible
       - name: Ensure PR is mergeable
