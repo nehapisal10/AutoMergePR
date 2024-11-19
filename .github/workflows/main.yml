@@ -1,10 +1,26 @@
 name: Auto Merge
 
 on:
+  pull_request_target:
+    types:
+      - labeled
+      - unlabeled
+      - synchronize
+      - opened
+      - edited
+      - ready_for_review
+      - reopened
+      - unlocked
+
   pull_request_review:
     types:
       - submitted  # Trigger when a review is submitted (approved or changes requested)
 
+  check_suite:
+    types:
+      - completed
+
+  status: {}
 jobs:
   automerge:
     runs-on: ubuntu-latest
