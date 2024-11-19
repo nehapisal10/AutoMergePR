@@ -11,59 +11,33 @@ on:
       - ready_for_review
       - reopened
       - unlocked
+
   pull_request_review:
     types:
-      - submitted
+      - submitted  # Trigger when a review is submitted (approved or changes requested)
+
   check_suite:
     types:
       - completed
+
   status: {}
 
 jobs:
   automerge:
     runs-on: ubuntu-latest
-    if: ${{ always() }}  # Ensure this job runs after any change in PR state
-
     permissions:
-      contents: read
-      pull-requests: write
-      actions: write
-      checks: read
+      contents: read       # Read repository content
+      pull-requests: write # Write access to PRs (to merge them)
+      actions: write       # Allow executing actions
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Ensure Required Approvals
-        id: approvals
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ github.token }}
-          script: |
-            // Fetch the reviews of the pull request
-            const { data: reviews } = await github.rest.pulls.listReviews({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number
-            });
-
-            // Filter reviews that have been "APPROVED"
-            const approvedReviews = reviews.filter(review => review.state === "APPROVED");
-            const requiredApprovals = 1;  // Adjust based on your repo rules
-
-            console.log(`Found ${approvedReviews.length} approvals.`);
-
-            // If the number of approved reviews is less than required, fail the job
-            if (approvedReviews.length < requiredApprovals) {
-              core.setFailed(`PR requires at least ${requiredApprovals} approval(s).`);
-            } else {
-              console.log(`Required approval(s) granted.`);
-            }
-            
       - name: Ensure PR is mergeable
         id: mergeable
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}  # Default GitHub token provided by GitHub Actions
         run: |
           pr_details=$(gh pr view ${{ github.event.pull_request.number }} --json mergeable --jq .)
           echo "PR Details: $pr_details"
@@ -85,7 +59,34 @@ jobs:
             echo "Unexpected mergeable state: $mergeable"
             exit 1
           fi
-          
+
+      - name: Ensure Required Approvals
+        id: approvals
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            // Debugging: log all review states
+            console.log(`Reviews submitted: ${reviews.map(review => review.state).join(", ")}`);
+            
+            // Filter reviews that have been "APPROVED"
+            const approvedReviews = reviews.filter(review => review.state === "APPROVED");
+            const requiredApprovals = 1;  // Set this according to your repo's approval rules
+
+            console.log(`Found ${approvedReviews.length} approvals.`);
+
+            if (approvedReviews.length < requiredApprovals) {
+              core.setFailed(`PR requires at least ${requiredApprovals} approval(s).`);
+            } else {
+              console.log(`Required approval(s) granted.`);
+            }
+
       - name: Automerge Script
         uses: actions/github-script@v6
         with:
@@ -119,3 +120,34 @@ jobs:
             } else {
               console.log("Pull request is not mergeable.");
             }
+
+  wait_for_approval_and_retry_merge:
+    runs-on: ubuntu-latest
+    needs: automerge
+    if: ${{ always() }}  # Ensure this job runs after any change in PR state
+
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: write
+
+    steps:
+      - name: Retry Automerge Script
+        run: |
+          echo "Polling for review approvals..."
+          
+          # Check the PR for review status (using `gh` to fetch PR details)
+          pr_details=$(gh pr view ${{ github.event.pull_request.number }} --json mergeable,reviewState --jq '{mergeable: .mergeable, reviewState: .reviews | map(select(.state == "APPROVED")) | length}')
+
+          mergeable=$(echo "$pr_details" | jq -r .mergeable)
+          approvals=$(echo "$pr_details" | jq -r .reviewState)
+
+          echo "Mergeable: $mergeable, Approvals: $approvals"
+
+          if [ "$mergeable" == "true" ] && [ "$approvals" -ge 1 ]; then
+            echo "PR is mergeable and has sufficient approvals. Proceeding with merge."
+            gh pr merge ${{ github.event.pull_request.number }} --squash --commit-title "Auto-merged by GitHub Actions"
+          else
+            echo "PR is not ready to merge yet (mergeable: $mergeable, approvals: $approvals). Retrying..."
+            sleep 30s  # Wait before retrying
+          fi
