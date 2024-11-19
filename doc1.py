@@ -1,6 +1,6 @@
 
  
  
-print("Hello PTC PPl ,  helloo neha   !!")
+print("Hello PTC PPl ,  helloo neha   !")
 
 
