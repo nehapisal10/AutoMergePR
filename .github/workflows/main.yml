@@ -103,40 +103,31 @@ jobs:
           fi
  
       - name: Ensure Required Approvals
-
         id: approvals
-
         uses: actions/github-script@v6
-
         with:
-
           github-token: ${{ github.token }}
-
           script: |
-
+            // Fetch the reviews of the pull request
             const { data: reviews } = await github.rest.pulls.listReviews({
-
               owner: context.repo.owner,
-
               repo: context.repo.repo,
-
               pull_number: context.payload.pull_request.number
-
             });
- 
-            // Filter reviews for "APPROVED" state
 
-            const approvedReviews = reviews.filter(r => r.state === "APPROVED");
+            // Filter reviews that have been "APPROVED"
+            const approvedReviews = reviews.filter(review => review.state === "APPROVED");
+            const requiredApprovals = 1;  // Adjust based on your repo rules
 
-            const requiredApprovals = 1; // Adjust based on repository rules
- 
             console.log(`Found ${approvedReviews.length} approvals.`);
- 
+
+            // If the number of approved reviews is less than required, fail the job
             if (approvedReviews.length < requiredApprovals) {
-
               core.setFailed(`PR requires at least ${requiredApprovals} approval(s).`);
-
+            } else {
+              console.log(`Required approval(s) granted.`);
             }
+
  
       - name: Automerge Script
 
