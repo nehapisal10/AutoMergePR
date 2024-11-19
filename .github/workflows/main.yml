@@ -34,32 +34,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Ensure PR is mergeable
-        id: mergeable
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          pr_details=$(gh pr view ${{ github.event.pull_request.number }} --json mergeable --jq .)
-          echo "PR Details: $pr_details"
-
-          # Fetch the mergeable field
-          mergeable=$(echo "$pr_details" | jq -r .mergeable)
-
-          echo "Mergeable state: $mergeable"
-
-          if [ "$mergeable" = "MERGEABLE" ]; then
-            echo "Pull request is mergeable."
-          elif [ "$mergeable" = "false" ]; then
-            echo "Pull request is not mergeable."
-            exit 1
-          elif [ "$mergeable" = "null" ]; then
-            echo "Mergeable state is unknown. Please check the PR status."
-            exit 1
-          else
-            echo "Unexpected mergeable state: $mergeable"
-            exit 1
-          fi
-
       - name: Ensure Required Approvals
         id: approvals
         uses: actions/github-script@v6
@@ -85,7 +59,33 @@ jobs:
             } else {
               console.log(`Required approval(s) granted.`);
             }
+            
+      - name: Ensure PR is mergeable
+        id: mergeable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr_details=$(gh pr view ${{ github.event.pull_request.number }} --json mergeable --jq .)
+          echo "PR Details: $pr_details"
 
+          # Fetch the mergeable field
+          mergeable=$(echo "$pr_details" | jq -r .mergeable)
+
+          echo "Mergeable state: $mergeable"
+
+          if [ "$mergeable" = "MERGEABLE" ]; then
+            echo "Pull request is mergeable."
+          elif [ "$mergeable" = "false" ]; then
+            echo "Pull request is not mergeable."
+            exit 1
+          elif [ "$mergeable" = "null" ]; then
+            echo "Mergeable state is unknown. Please check the PR status."
+            exit 1
+          else
+            echo "Unexpected mergeable state: $mergeable"
+            exit 1
+          fi
+          
       - name: Automerge Script
         uses: actions/github-script@v6
         with:
