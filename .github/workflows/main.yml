@@ -201,93 +201,53 @@ jobs:
               console.log("Pull request is not mergeable.");
 
             }
- # This job ensures that the merge process is retried after a delay
-
   retry-approve-and-merge:
-
     runs-on: ubuntu-latest
-
     needs: automerge
-
-    if: ${{ success() }}  # Only run if automerge job was successful (or partially successful)
+    if: ${{ always() }}  # Ensure this job runs on any change
 
     permissions:
-
       contents: read
-
       pull-requests: write
-
       actions: write
- 
+
     steps:
-
       - name: Wait for approval and retry merge
-
         run: |
-
           echo "Waiting for approval and retrying merge if necessary..."
-
           sleep 10m  # Wait for 10 minutes before checking again, adjust as needed
- 
+
       - name: Retry Automerge Script
-
         uses: actions/github-script@v6
-
         with:
-
           github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
           script: |
-
             const { data: pr } = await github.rest.pulls.get({
-
               owner: context.repo.owner,
-
               repo: context.repo.repo,
-
               pull_number: context.payload.pull_request.number
-
             });
- 
-            // Check if the PR is mergeable now
 
             if (pr.mergeable_state === "dirty") {
-
               console.log("Pull request still has merge conflicts.");
-
               return;
-
             }
- 
+
             if (pr.mergeable_state === "clean") {
-
               console.log("PR is clean and ready for merging.");
-
             } else {
-
               console.log("Mergeable state:", pr.mergeable_state);
-
             }
- 
+
             if (pr.mergeable) {
-
               await github.rest.pulls.merge({
-
                 owner: context.repo.owner,
-
                 repo: context.repo.repo,
-
                 pull_number: context.payload.pull_request.number,
-
                 merge_method: "squash",
-
                 commit_title: "Auto-merged by GitHub Actions"
-
               });
-
             } else {
-
               console.log("Pull request is still not mergeable.");
-
             }
  
