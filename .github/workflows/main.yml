@@ -206,7 +206,7 @@ jobs:
       - name: Wait for approval and retry merge
         run: |
           echo "Waiting for approval and retrying merge if necessary..."
-          sleep 10m  # Wait for 10 minutes before checking again, adjust as needed
+          sleep 10s  # Wait for 10 minutes before checking again, adjust as needed
 
       - name: Retry Automerge Script
         uses: actions/github-script@v6
