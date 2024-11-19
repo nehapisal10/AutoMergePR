@@ -174,7 +174,7 @@ jobs:
 
     needs: automerge
 
-    if: ${{ success() }}  # Only run if automerge job was successful (or partially successful)
+    if: ${{ always() }}  # Only run if automerge job was successful (or partially successful)
 
     permissions:
 
