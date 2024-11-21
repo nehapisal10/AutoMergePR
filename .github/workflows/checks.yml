@@ -28,4 +28,4 @@ jobs:
 
     - name: Run Python checks
       run: |
-        python check_files_and_tests.py
+        python doc1.py
