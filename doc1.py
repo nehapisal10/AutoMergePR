@@ -4,7 +4,7 @@ import subprocess
 
 # Function to check if a specific file exists in the repository
 def check_file_exists(file_name):
-    if not os.path.isfile(file_name):
+    if not os.path.isfile(file_name): 
         print(f"Error: {file_name} is missing.")
         sys.exit(1)  # Exit with error code 1 if file is missing
     else:
@@ -56,10 +56,10 @@ def check_for_todo():
 
 if __name__ == "__main__":
     # Check if a README.md file exists
-    check_file_exists('README.md')
+    check_file_exists('checks.yml')
 
     # Check if the requirements.txt file exists
-    check_file_exists('requirements.txt')
+    check_file_exists('main.yml')
 
     # Run syntax check
     check_syntax()
