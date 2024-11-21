@@ -5,8 +5,8 @@ on:
     paths:
       - '**/*.py'
       - '.github/workflows/*'
-      - 'README.md'
-      - 'requirements.txt'
+      - 'checks.yml'
+      - 'main.yml'
 
 jobs:
   check:
