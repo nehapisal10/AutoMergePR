@@ -1,45 +1,58 @@
-name: Python Check Workflow
+name: CI Workflow
 
 on:
-  pull_request_target:
-    types:
-      - labeled
-      - unlabeled
-      - synchronize
-      - opened
-      - edited
-      - ready_for_review
-      - reopened
-      - unlocked
-
-  pull_request_review:
-    types:
-      - submitted  # Trigger when a review is submitted (approved or changes requested)
-      
-    paths:
-      - '**/*.py'
-      - '.github/workflows/*'
-      - 'checks.yml'
-      - 'main.yml'
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
+      - name: SetUp Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.8'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest pyflakes
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Run Python checks
-      run: |
-        python doc1.py
+      - name: Run tests
+        run: pytest
+
+      - name: Check for README.md file
+        run: |
+          if [ ! -f "README.md" ]; then
+            echo "Error: README.md file is missing!"
+            exit 1
+          else
+            echo "README.md exists."
+          fi
+        shell: bash
+        # On Windows, shell is PowerShell by default. To use Bash, ensure to use WSL or Git Bash.
+        # If you need PowerShell for Windows, you can modify the check using PowerShell syntax like:
+        # powershell -Command "if (-not (Test-Path 'README.md')) { Write-Host 'Error: README.md file is missing!' exit 1 } else { Write-Host 'README.md exists.' }"
+
+      - name: Check Python version compatibility
+        run: |
+          python --version
+          if [ "$(python --version)" != "Python 3.8"* ]; then
+            echo "Error: Python version is not 3.8!"
+            exit 1
+          else
+            echo "Python version is compatible."
+          fi
+        shell: bash
